@@ -1437,6 +1437,7 @@ if ('serviceWorker' in navigator) {
 
 
 // ---- INSTALL PROMPT HANDLER ----
+// === Install Prompt Handling (added for mobile support) ===
 let deferredPrompt = null;
 const installPopup = document.getElementById('installPopup');
 const installConfirmBtn = document.getElementById('installConfirmBtn');
@@ -1445,30 +1446,29 @@ const installDismissBtn = document.getElementById('installDismissBtn');
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
-
-  // ✅ Show popup when event fires
   installPopup.style.display = 'block';
 });
 
-// ✅ Handle when user clicks 'Install'
 installConfirmBtn.addEventListener('click', async () => {
   if (!deferredPrompt) return;
-
   deferredPrompt.prompt();
   const { outcome } = await deferredPrompt.userChoice;
-
   if (outcome === 'accepted') {
     console.log('User accepted the install prompt');
   } else {
     console.log('User dismissed the install prompt');
   }
-
   deferredPrompt = null;
   installPopup.style.display = 'none';
 });
 
-// ✅ Handle when user clicks 'Maybe later'
 installDismissBtn.addEventListener('click', () => {
   installPopup.style.display = 'none';
 });
+
+// Optional iOS fallback:
+if (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')) {
+  installPopup.style.display = 'block';
+}
+
 
