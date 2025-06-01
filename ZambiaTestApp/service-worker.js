@@ -58,7 +58,7 @@ const ASSETS = [
   './images/Ears/HealthandDeafness.jpg',
 
   /* Videos – Eyes */
-  './videos/DirectOpthalmoscopy.mp4',
+  './videos/DirectOphthalmoscopy.mp4',
   './videos/AnteriorSegment.mp4',
   './videos/Pupil/RAPDTest.mp4',
   './videos/Pupil/PupilExam.mp4',
