@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Anterior Segment Quiz App</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0; padding: 0;
+    background: #f2f5f8;
+    color: #333;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    padding: 20px;
+  }
+  .card {
+    background: white;
+    max-width: 400px;
+    width: 100%;
+    border-radius: 16px;
+    padding: 24px 20px 32px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+  }
+  h2, h3, h4 {
+    margin-top: 0;
+    font-weight: 700;
+  }
+  h2, h4 {
+    margin-bottom: 16px;
+  }
+  h3 {
+    margin-bottom: 10px;
+    font-size: 18px;
+  }
+  button {
+    background-color: #B4342A;
+    color: white;
+    font-size: 18px;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+    user-select: none;
+  }
+  button:hover:not(:disabled) {
+    background-color: #7a3634;
+  }
+  button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  img.case-image {
+    width: 100px;
+    object-fit: contain;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    border: 1px solid #ddd;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  /* Selected answer highlight: soft grey */
+  .options input[type="radio"]:checked + label {
+    border-color: #999;
+    background: #d3d3d3;
+  }
+  /* Subtitle style */
+  #caseSubtitle {
+    font-size: 18px;
+    font-weight: 500;
+    margin-top: -12px;
+    margin-bottom: 16px;
+    color: #444;
+  }
+  .question {
+    margin-bottom: 24px;
+  }
+  .options {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .options li {
+    margin-bottom: 12px;
+  }
+  .options label {
+    display: block;
+    padding: 10px 14px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .options input[type="radio"] {
+    display: none;
+  }
+  .score-summary {
+    font-size: 20px;
+    text-align: center;
+  }
+  .nav-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .nav-buttons button {
+    width: 48%;
+  }
+  /* Review styles to mimic question page */
+  #reviewCard {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .review-case {
+    margin-bottom: 40px;
+  }
+  .review-case h2 {
+    margin-bottom: 8px;
+  }
+  .review-case img {
+    margin-bottom: 12px;
+  }
+  .review-question {
+    margin-bottom: 24px;
+  }
+  .review-question h3 {
+    font-weight: 700;
+    margin-bottom: 10px;
+    font-size: 18px;
+  }
+  .review-options {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .review-options li {
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border: 2px solid transparent;
+    background: #f9f9f9;
+    font-weight: normal;
+  }
+  .review-options li.correct {
+    border-color: #388e3c;
+    background-color: #c8e6c9;
+    font-weight: 700;
+  }
+  .review-options li.user-selected {
+    font-weight: 700;
+    text-decoration: underline;
+  }
+  @media (max-width: 440px) {
+    body {
+      padding: 12px;
+    }
+    .card {
+      padding: 20px 16px 24px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <div id="quizCard" class="card">
+    <h2 id="caseTitle"></h2>
+    <div id="caseSubtitle"></div>
+    <img id="caseImage" class="case-image" src="" alt="Eye case image" />
+    
+    <form id="quizForm">
+      <!-- One question displayed at a time here -->
+    </form>
+
+    <div class="nav-buttons">
+      <button id="prevQuestionBtn" disabled>Previous Question</button>
+      <button id="nextQuestionBtn" disabled>Next Question</button>
+    </div>
+
+    <button id="nextCaseBtn" disabled style="margin-top:10px; display:none;">Next Case</button>
+  </div>
+
+  <div id="scoreCard" class="card" style="display:none;">
+    <h2>Quiz Complete!</h2>
+    <p class="score-summary" id="scoreText"></p>
+    <button id="reviewBtn">Review Quiz</button>
+    <button id="restartBtn" style="margin-top:10px;">Restart Quiz</button>
+  </div>
+
+  <div id="reviewCard" class="card" style="display:none;">
+    <h2>Review Answers</h2>
+    <div id="reviewContent"></div>
+    <button id="closeReviewBtn" style="margin-top:10px;">Close Review</button>
+  </div>
+
+</div>
+
+<script>
+  const cases = [
+    {
+      title: "6 month old baby: 'Eye looks funny'",
+      image: "images/case1_eye.png",
+      questions: [
+        {
+          question: "What is the dominant abnormal sign?",
+          options: [
+            "Hazey/grey cornea",
+            "White pupil (leucocoria)",
+            "Keratic precipitates",
+            "Hypopyon"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What is the most likely diagnosis?",
+          options: [
+            "Corneal scar",
+            "Congenital cataract",
+            "Infective keratitis",
+            "Limbal dermoid"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What should you do?",
+          options: [
+            "Prescribe topical antibiotics",
+            "Refer urgently to an eye-care professional",
+            "Reassure and discharge",
+            "Assess for spectacles only"
+          ],
+          correctIndex: 1
+        }
+      ]
+    },
+    {
+      title: "18-month-old, mum says white spot on the eye",
+      image: "images/case2_eye.png",
+      questions: [
+        {
+          question: "What is the dominant abnormal sign?",
+          options: [
+            "corneal oedema",
+            "Hazey/grey cornea",
+            "White/pink pupil with blood vessels",
+            "Pterygium"
+          ],
+          correctIndex: 2
+        },
+        {
+          question: "What is the most likely diagnosis?",
+          options: [
+            "Coloboma",
+            "Retinoblastoma",
+            "Congenital cataract",
+            "Large dermoid"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What should you do?",
+          options: [
+            "Start topical steroids",
+            "Reassure and review in 6 weeks",
+            "Give oral vitamin A",
+            "Refer urgently to eye specialist"
+          ],
+          correctIndex: 3
+        }
+      ]
+    },
+    {
+      title: "2-week-old, sticky red eyes",
+      image: "images/case3_eye.png",
+      questions: [
+        {
+          question: "What is the dominant abnormal sign?",
+          options: [
+            "Clear watery discharge",
+            "Purulent discharge with conjunctival redness",
+            "Hyphaema",
+            "Subconjunctival haemorrhage"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What is the most likely diagnosis?",
+          options: [
+            "Allergic conjunctivitis",
+            "Ophthalmia neonatorum (gonococcus/chlamydia)",
+            "Nasolacrimal duct obstruction",
+            "Stye"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What should you do?",
+          options: [
+            "Irrigate and discharge",
+            "Start antibiotics and refer to paediatric team",
+            "Patch the eye",
+            "Start topical antihistamine"
+          ],
+          correctIndex: 1
+        }
+      ]
+    },
+    {
+      title: "34-year-old man, gritty eye, blurred vision",
+      image: "images/case4_eye.png",
+      questions: [
+        {
+          question: "What is the dominant abnormal sign?",
+          options: [
+            "Arcus senilis",
+            "In-turned eyelashes rubbing the cornea (trichiasis)",
+            "Hyphaema",
+            "Dendritic ulcer"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What is the most likely diagnosis?",
+          options: [
+            "Episcleritis",
+            "Bacterial conjunctivitis",
+            "Trachomatous trichiasis with corneal scarring",
+            "Pterygium"
+          ],
+          correctIndex: 2
+        },
+        {
+          question: "What should you do?",
+          options: [
+            "Prescribe lubricants only",
+            "Refer for lid surgery/epilation ± antibiotic ointment",
+            "Reassure and discharge",
+            "Give oral antivirals"
+          ],
+          correctIndex: 1
+        }
+      ]
+    },
+    {
+      title: "34-year-old, corneal injury from tree branch",
+      image: "images/case5_eye.png",
+      questions: [
+        {
+          question: "What is the dominant abnormal sign?",
+          options: [
+            "Pink fleshy lesion",
+            "Corneal opacity, hypopyon and red eye",
+            "Corneal scar",
+            "Keratic precipitates"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What is the most likely diagnosis?",
+          options: [
+            "Acute iritis",
+            "Bacterial / fungal corneal ulcer (traumatic)",
+            "Viral conjunctivitis",
+            "Pterygium"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What should you do?",
+          options: [
+            "Start artificial tears only",
+            "Begin intensive fortified antibiotics and refer urgently",
+            "Steroid drops",
+            "Reassure and discharge"
+          ],
+          correctIndex: 1
+        }
+      ]
+    },
+    {
+      title: "22-year-old woman, painful watery eye",
+      image: "images/case6_eye.png",
+      questions: [
+        {
+          question: "What is the dominant abnormal sign?",
+          options: [
+            "Circular corneal infiltrate",
+            "Branching dendritic ulcer staining with fluorescein",
+            "Hyphaema",
+            "White pupil"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What is the most likely diagnosis?",
+          options: [
+            "Acanthamoeba keratitis",
+            "Herpes simplex keratitis",
+            "Bacterial ulcer",
+            "Allergic conjunctivitis"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What should you do?",
+          options: [
+            "Prescribe topical steroids alone",
+            "Refer urgently to eye specialist for antiviral therapy",
+            "Remove lashes",
+            "Discharge with lubricants only"
+          ],
+          correctIndex: 1
+        }
+      ]
+    },
+    {
+      title: "54-year-old woman, photophobia, RA history",
+      image: "images/case7_eye.png",
+      questions: [
+        {
+          question: "What is the dominant abnormal sign?",
+          options: [
+            "Corneal Scar",
+            "Misshapen pupil, limbal injection and Keratic precipitates",
+            "Corneal infiltrate"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What is the most likely diagnosis?",
+          options: [
+            "Acute angle-closure glaucoma",
+            "Anterior Uveitis",
+            "Episcleritis",
+            "Bacterial Ulcer"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What should you do?",
+          options: [
+            "Prescribe oral NSAIDs",
+            "Urgent eye specialist referral for steroids",
+            "Start anti-histamine drops",
+            "Reassure and review in 1 month"
+          ],
+          correctIndex: 1
+        }
+      ]
+    },
+    {
+      title: "74-year-old man, lifelong outdoor work",
+      image: "images/case8_eye.png",
+      questions: [
+        {
+          question: "What is the dominant abnormal sign?",
+          options: [
+            "Subconjunctival haemorrhage",
+            "Corneal infiltrate",
+            "Fleshy triangular growth on cornea",
+            "Hyphaema"
+          ],
+          correctIndex: 2
+        },
+        {
+          question: "What is the most likely diagnosis?",
+          options: [
+            "Limbal dermoid",
+            "Pterygium",
+            "Herpes zoster ophthalmicus",
+            "Bacterial Ulcer"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What should you do?",
+          options: [
+            "Refer eye specialist",
+            "Start systemic steroids",
+            "Start antibiotic treatment",
+            "No management required"
+          ],
+          correctIndex: 0
+        }
+      ]
+    },
+    {
+      title: "24-year-old mechanic, gritty eye for 3 days",
+      image: "images/case9_eye.png",
+      questions: [
+        {
+          question: "What is the dominant abnormal sign?",
+          options: [
+            "Diffuse corneal haze",
+            "Metallic foreign body with rust ring, infiltrate and conjunctival redness",
+            "Corneal scar",
+            "Hypopyon"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What is the most likely diagnosis?",
+          options: [
+            "Herpes keratitis",
+            "Corneal foreign body with early infection",
+            "Pterygium",
+            "Traumatic cataract"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What should you do?",
+          options: [
+            "Reassure and discharge",
+            "Remove foreign body and start topical antibiotics",
+            "Patch the eye for a week",
+            "Prescribe oral antivirals"
+          ],
+          correctIndex: 1
+        }
+      ]
+    },
+    {
+      title: "24-year-old, blunt trauma in fight",
+      image: "images/case10_eye.png",
+      questions: [
+        {
+          question: "What is the dominant abnormal sign?",
+          options: [
+            "Subconjunctival haemorrhage",
+            "Red fluid level in anterior chamber (hyphaema)",
+            "Corneal infiltrate",
+            "Pus in front of eye"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What is the most likely diagnosis?",
+          options: [
+            "Angle-closure glaucoma",
+            "Traumatic hyphaema",
+            "Corneal laceration",
+            "Endophthalmitis"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What should you do?",
+          options: [
+            "Prescribe antibiotics and review in 1 month",
+            "Apply shield, give analgesia & refer urgently",
+            "Dilate pupil & discharge",
+            "Reassure and discharge"
+          ],
+          correctIndex: 1
+        }
+      ]
+    },
+    {
+      title: "14-year-old, sore eye after playing with a stick",
+      image: "images/case11_eye.png",
+      questions: [
+        {
+          question: "What is the dominant abnormal sign?",
+          options: [
+            "White pupil",
+            "Misshapen pupil with brown iris prolapse at limbus",
+            "Corneal infiltrate",
+            "Subconjunctival haemorrhage"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What is the most likely diagnosis?",
+          options: [
+            "Chemical burn",
+            "Penetrating corneal laceration with iris prolapse",
+            "Acute iritis",
+            "Pterygium"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What should you do?",
+          options: [
+            "Instil topical anaesthetic and discharge",
+            "Shield eye, give analgesia & refer urgently to eye speciaslit",
+            "Start steroid drops and discharge",
+            "Irrigate with water for 30 minutes and discharge"
+          ],
+          correctIndex: 1
+        }
+      ]
+    },
+    {
+      title: "12-year-old, traumatic white pupil",
+      image: "images/case12_eye.png",
+      questions: [
+        {
+          question: "What is the dominant abnormal sign?",
+          options: [
+            "Dendritic ulcer",
+            "White pupil with linear corneal laceration",
+            "Corneal infiltrate",
+            "Conjunctival injection"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What is the most likely diagnosis?",
+          options: [
+            "Acute closed angle glaucoma",
+            "Penetrating injury causing traumatic cataract",
+            "Bacterial ulcer",
+            "Chalazion"
+          ],
+          correctIndex: 1
+        },
+        {
+          question: "What should you do?",
+          options: [
+            "Prescribe antibiotic ointment only",
+            "Apply shield, analgesia & arrange urgent referral",
+            "Discharge with reassurance",
+            "Fit contact lens to improve vision"
+          ],
+          correctIndex: 1
+        }
+      ]
+    }
+  ];
+
+  const caseTitle = document.getElementById("caseTitle");
+  const caseSubtitle = document.getElementById("caseSubtitle");
+  const caseImage = document.getElementById("caseImage");
+  const quizForm = document.getElementById("quizForm");
+  const prevQuestionBtn = document.getElementById("prevQuestionBtn");
+  const nextQuestionBtn = document.getElementById("nextQuestionBtn");
+  const nextCaseBtn = document.getElementById("nextCaseBtn");
+  const scoreCard = document.getElementById("scoreCard");
+  const quizCard = document.getElementById("quizCard");
+  const scoreText = document.getElementById("scoreText");
+  const restartBtn = document.getElementById("restartBtn");
+  const reviewBtn = document.getElementById("reviewBtn");
+  const reviewCard = document.getElementById("reviewCard");
+  const reviewContent = document.getElementById("reviewContent");
+  const closeReviewBtn = document.getElementById("closeReviewBtn");
+
+  let currentCaseIndex = 0;
+  let currentQuestionIndex = 0;
+  let answers = cases.map(c => new Array(c.questions.length).fill(null));
+
+  function renderQuestion(caseIndex, questionIndex) {
+    const c = cases[caseIndex];
+    const q = c.questions[questionIndex];
+
+    caseTitle.textContent = `Case ${caseIndex + 1}`;
+    caseSubtitle.textContent = c.title;
+
+    caseImage.src = c.image;
+    caseImage.alt = c.title + " image";
+
+    quizForm.innerHTML = "";
+
+    const div = document.createElement("div");
+    div.classList.add("question");
+
+    const h3 = document.createElement("h3");
+    h3.textContent = `${questionIndex + 1}. ${q.question}`;
+    div.appendChild(h3);
+
+    const ul = document.createElement("ul");
+    ul.classList.add("options");
+
+    q.options.forEach((opt, optIndex) => {
+      const li = document.createElement("li");
+      const input = document.createElement("input");
+      const id = `case${caseIndex}_q${questionIndex}_opt${optIndex}`;
+      input.type = "radio";
+      input.name = `q${questionIndex}`;
+      input.id = id;
+      input.value = optIndex;
+      if (answers[caseIndex][questionIndex] === optIndex) {
+        input.checked = true;
+      }
+      input.onchange = () => {
+        answers[caseIndex][questionIndex] = parseInt(input.value);
+        updateButtons();
+      };
+
+      const label = document.createElement("label");
+      label.htmlFor = id;
+      label.textContent = opt;
+
+      li.appendChild(input);
+      li.appendChild(label);
+      ul.appendChild(li);
+    });
+
+    div.appendChild(ul);
+    quizForm.appendChild(div);
+
+    updateButtons();
+  }
+
+  function updateButtons() {
+    prevQuestionBtn.disabled = currentQuestionIndex === 0;
+    nextQuestionBtn.disabled = currentQuestionIndex === cases[currentCaseIndex].questions.length - 1;
+
+    // Show Next Case button if all questions answered for current case
+    const allAnswered = !answers[currentCaseIndex].some(a => a === null);
+    nextCaseBtn.style.display = allAnswered ? "block" : "none";
+
+    nextCaseBtn.disabled = !allAnswered;
+  }
+
+  prevQuestionBtn.onclick = () => {
+    if (currentQuestionIndex > 0) {
+      currentQuestionIndex--;
+      renderQuestion(currentCaseIndex, currentQuestionIndex);
+    }
+  };
+
+  nextQuestionBtn.onclick = () => {
+    if (currentQuestionIndex < cases[currentCaseIndex].questions.length - 1) {
+      currentQuestionIndex++;
+      renderQuestion(currentCaseIndex, currentQuestionIndex);
+    }
+  };
+
+  nextCaseBtn.onclick = () => {
+    currentCaseIndex++;
+    currentQuestionIndex = 0;
+    if (currentCaseIndex >= cases.length) {
+      showScore();
+    } else {
+      renderQuestion(currentCaseIndex, currentQuestionIndex);
+    }
+  };
+
+  function showScore() {
+    quizCard.style.display = "none";
+    scoreCard.style.display = "block";
+
+    let totalQuestions = 0;
+    let correctCount = 0;
+    cases.forEach((c, caseIdx) => {
+      c.questions.forEach((q, qIdx) => {
+        totalQuestions++;
+        if (answers[caseIdx] && answers[caseIdx][qIdx] === q.correctIndex) {
+          correctCount++;
+        }
+      });
+    });
+
+    scoreText.textContent = `You scored ${correctCount} out of ${totalQuestions} correct.`;
+  }
+
+  restartBtn.onclick = () => {
+    currentCaseIndex = 0;
+    currentQuestionIndex = 0;
+    answers = cases.map(c => new Array(c.questions.length).fill(null));
+    scoreCard.style.display = "none";
+    reviewCard.style.display = "none";
+    quizCard.style.display = "block";
+    renderQuestion(currentCaseIndex, currentQuestionIndex);
+  };
+
+  reviewBtn.onclick = () => {
+    scoreCard.style.display = "none";
+    reviewCard.style.display = "block";
+    buildReview();
+  };
+
+  closeReviewBtn.onclick = () => {
+    reviewCard.style.display = "none";
+    scoreCard.style.display = "block";
+  };
+
+  function buildReview() {
+    reviewContent.innerHTML = "";
+    cases.forEach((c, caseIdx) => {
+      const caseDiv = document.createElement("div");
+      caseDiv.classList.add("review-case");
+
+      const h2 = document.createElement("h2");
+      h2.textContent = `Case ${caseIdx + 1}`;
+      caseDiv.appendChild(h2);
+
+      const subtitle = document.createElement("div");
+      subtitle.id = "caseSubtitle";
+      subtitle.textContent = c.title;
+      caseDiv.appendChild(subtitle);
+
+      const img = document.createElement("img");
+      img.className = "case-image";
+      img.src = c.image;
+      img.alt = c.title + " image";
+      caseDiv.appendChild(img);
+
+      c.questions.forEach((q, qIdx) => {
+        const qDiv = document.createElement("div");
+        qDiv.classList.add("review-question");
+
+        const qH3 = document.createElement("h3");
+        qH3.textContent = `${qIdx + 1}. ${q.question}`;
+        qDiv.appendChild(qH3);
+
+        const ul = document.createElement("ul");
+        ul.classList.add("review-options");
+
+        q.options.forEach((opt, optIdx) => {
+          const li = document.createElement("li");
+
+          if (optIdx === q.correctIndex) {
+            li.classList.add("correct");
+          }
+          if (answers[caseIdx][qIdx] === optIdx) {
+            li.classList.add("user-selected");
+          }
+
+          li.textContent = opt;
+          ul.appendChild(li);
+        });
+
+        qDiv.appendChild(ul);
+        caseDiv.appendChild(qDiv);
+      });
+
+      reviewContent.appendChild(caseDiv);
+    });
+  }
+
+  // Initialize first question display
+  renderQuestion(currentCaseIndex, currentQuestionIndex);
+</script>
+
+</body>
+</html>
