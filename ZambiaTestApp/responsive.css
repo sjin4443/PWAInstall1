@@ -1,0 +1,41 @@
+/* ═══  Galaxy S8+ baseline  ═════════════════════════════════════ */
+@media (min-width:300px){
+  :root{ --gw:calc(1vw*(360/100)); }   /* 360 css-px → 100 gw */
+}
+
+/* ═══  Fluid overrides  ═════════════════════════════════════════ */
+
+/* Inputs */
+.fixed-input{
+  width:clamp(220px,75%,340px);
+  height:2.8rem;
+}
+
+/* Thumbnails in module cards */
+.module-card img{
+  width:clamp(56px,22vw,96px);
+  height:auto;
+}
+
+/* Bottom navigation bar */
+.bottom-bar{
+  display:flex;
+  justify-content:space-between;
+  padding-inline:4vw;
+}
+.bottom-bar .nav-icon{ margin-right:0; }
+
+/* Atoms-page vertical buttons */
+.top-right-icons{
+  position:fixed;
+  top:8vh;
+  right:4vw;
+  left:auto;
+  margin:0;
+  gap:2vh;
+}
+
+/* Fluid type scale */
+h1{font-size:clamp(1.4rem,4.5vw,2rem);}
+h3{font-size:clamp(1rem,3.8vw,1.4rem);}
+button,select,input{font-size:clamp(.9rem,3.5vw,1.1rem);}
