@@ -1438,29 +1438,37 @@ if ('serviceWorker' in navigator) {
 
 // ---- INSTALL PROMPT HANDLER ----
 let deferredPrompt = null;
-const installBtn = document.getElementById('installBtn');
+const installPopup = document.getElementById('installPopup');
+const installConfirmBtn = document.getElementById('installConfirmBtn');
+const installDismissBtn = document.getElementById('installDismissBtn');
 
-// 1. Wait for the browser to fire the event
 window.addEventListener('beforeinstallprompt', e => {
-  // stop the automatic banner
   e.preventDefault();
-  deferredPrompt = e;              // save it for later
-  if (installBtn) installBtn.hidden = false;
+  deferredPrompt = e;
+
+  // ✅ Show popup when event fires
+  installPopup.style.display = 'block';
 });
 
-// 2. Respond to the user click
-if (installBtn) {
-  installBtn.addEventListener('click', async () => {
-    if (!deferredPrompt) return;   // safety check
-    installBtn.disabled = true;    // (optional) prevent double-clicks
+// ✅ Handle when user clicks 'Install'
+installConfirmBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
 
-    deferredPrompt.prompt();       // show the mini-UI
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log('User choice:', outcome);  // accepted / dismissed
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
 
-    // Clean up
-    deferredPrompt = null;
-    installBtn.hidden = true;
-    installBtn.disabled = false;
-  });
-}
+  if (outcome === 'accepted') {
+    console.log('User accepted the install prompt');
+  } else {
+    console.log('User dismissed the install prompt');
+  }
+
+  deferredPrompt = null;
+  installPopup.style.display = 'none';
+});
+
+// ✅ Handle when user clicks 'Maybe later'
+installDismissBtn.addEventListener('click', () => {
+  installPopup.style.display = 'none';
+});
+
